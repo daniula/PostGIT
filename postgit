@@ -39,6 +39,8 @@ else
         OUTPUT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     fi
 
+    cd $OUTPUT_DIR
+
     TMP_DIR="${OUTPUT_DIR%%/}/tmp"
 
     if [ $HOST="" ]; then
@@ -71,10 +73,10 @@ else
         exit 3
     fi
 
-    if [ -f .gitignore ]; then
+    if [ -f "${OUTPUT_DIR%%/}/.gitignore" ]; then
             :
     else
-        echo "/tmp/" | cat > .gitignore
+        echo "/tmp/" | cat > "${OUTPUT_DIR%%/}/.gitignore"
         git add .gitignore
         git commit -m "Create .gitignore file"
     fi
