@@ -23,19 +23,18 @@ while getopts "xqo:d:u:h:p:" opt; do
     esac
 done
 
-if [ !"$COMMAND" -o $COMMAND = "help" ]; then
-    :
-else
+if [[ -n $COMMAND && $COMMAND != "help" ]]; then
+
     if $DEBUG ; then
         echo "In debug mode, nothing will be commited to git repository"
     fi
 
-    if [[ $USERNAME = "" || $DATABASE = "" ]]; then
+    if [[ -z $USERNAME || -z $DATABASE ]]; then
         echo "Options: -u POSTGRES_USERNAME and -d POSTGRES_DATABASE are required." >&2
         exit 1
     fi
 
-    if [ $OUTPUT_DIR="" ]; then
+    if [[ -z $OUTPUT_DIR ]]; then
         OUTPUT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     fi
 
@@ -43,15 +42,15 @@ else
 
     TMP_DIR="${OUTPUT_DIR%%/}/tmp"
 
-    if [ $HOST="" ]; then
+    if [[ -z $HOST ]]; then
         HOST="localhost"
     fi
 
-    if [ $PORT="" ]; then
+    if [[ -z $PORT ]]; then
         PORT="5432"
     fi
 
-    if [ -f ~/.pgpass ]; then
+    if [[ -f ~/.pgpass ]]; then
         :
     else
         echo "Create ~/.pgpass file with access to Postgres in format: hostname:port:database:username:password" >&2
@@ -59,21 +58,21 @@ else
     fi
 
     PGPASS_CHMOD=$(ls -l ~/.pgpass | cut -d ' ' -f 1 | tr -d '\s\n' | tail -c 6)
-    if [ $PGPASS_CHMOD = "------" ]; then
+    if [[ $PGPASS_CHMOD = "------" ]]; then
         :
     else
-        echo "Change ~/.pgpass permissions to 0600 (chmod 0600 ~/.pgpass)."
+        echo "Change ~/.pgpass permissions to 0600 \(chmod 0600 ~/.pgpass\)."
         exit 2
     fi
 
-    if [ -d .git ]; then
+    if [[ -d "${OUTPUT_DIR%%/}/.git" ]]; then
         :
     else
         echo "Create git repository (git init) with origin remote (git remote add origin <url>)." >&2
         exit 3
     fi
 
-    if [ -f "${OUTPUT_DIR%%/}/.gitignore" ]; then
+    if [[ -f "${OUTPUT_DIR%%/}/.gitignore" ]]; then
             :
     else
         echo "/tmp/" | cat > "${OUTPUT_DIR%%/}/.gitignore"
@@ -82,7 +81,7 @@ else
     fi
 
     GIT_ORIGIN=$(git remote -v | grep origin | wc -l | tr -d ' ')
-    if [ $GIT_ORIGIN -eq 0 ]; then
+    if [[ $GIT_ORIGIN -eq 0 ]]; then
         echo "Add origin remote to repository (git remote add origin <url>)." >&2
         exit 4
     fi
@@ -91,7 +90,7 @@ fi
 case $COMMAND in
     backup)
         # Clear tmp directory if previous backup failed
-        if [ -d $TMP_DIR ]; then
+        if [[ -d $TMP_DIR ]]; then
             rm -rf $TMP_DIR
         fi
 
@@ -106,10 +105,10 @@ case $COMMAND in
             $DATABASE
 
 
-        if [ -d "$TMP_DIR" -a $(ls -l tmp | grep total | cut -d ' ' -f 2) -gt 0 ]; then
+        if [[ -d $TMP_DIR && $(ls -l tmp | grep total | cut -d ' ' -f 2) -gt 0 ]]; then
             echo "Sort *.dat files"
             for f in $TMP_DIR/* ; do
-                if [ $(basename $f) = "toc.dat" ]; then
+                if [[ $(basename $f) = "toc.dat" ]]; then
                     # Move binary toc.dat file without changes
                     mv $f $OUTPUT_DIR
                 else
@@ -135,12 +134,12 @@ case $COMMAND in
         echo "Add files to git"
         git add .
         FILES_CHANGED=$(git status | grep "modified\|new file" | grep -v "toc.dat" | grep -v "db.list" | wc -l | tr -d ' ')
-        if [ $FILES_CHANGED -gt 0 ]; then
+        if [[ $FILES_CHANGED -gt 0 ]]; then
             echo "New data detected, create and push commit"
             git commit -am "Automatic backup"
             git pull origin master
 
-            if [ $DEBUG = true ]; then
+            if [[ $DEBUG = true ]]; then
                 echo "Skip git push origin master"
             else
                 git push origin master
@@ -161,9 +160,9 @@ case $COMMAND in
     ;;
     help)
         echo "Usage:"
-        echo "postgit backup|restore -u POSTGRES_USERNAME -d POSTGRES_DATABASE [-h POSTGRES_HOST -p POSTGRES_PORT ] -o OUTPUT_DIRECTORY [-q -x]"
+        echo "postgit backup|restore -u POSTGRES_USERNAME -d POSTGRES_DATABASE [-h POSTGRES_HOST -p POSTGRES_PORT ]] -o OUTPUT_DIRECTORY [-q -x]"
 
-        echo "-o OUTPUT_DIRECTORY should have git repository with added git remote origin for branch master."
+        echo "-o OUTPUT_DIRECTORY should have git repository with added git remote origin for branchmaster."
         echo "-q Silence out output to stdout."
         echo "-x Is for testing. Skips git push command at the end of script."
     ;;
