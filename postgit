@@ -1,0 +1,172 @@
+#!/bin/bash
+
+COMMAND=$1
+shift 1
+
+DEBUG=false
+while getopts "xqo:d:u:h:p:" opt; do
+    case $opt in
+        x) DEBUG=true
+        ;;
+        q) exec 1>/dev/null
+        ;;
+        o) OUTPUT_DIR=$OPTARG
+        ;;
+        u) USERNAME=$OPTARG
+        ;;
+        d) DATABASE=$OPTARG
+        ;;
+        h) HOST=$OPTARG
+        ;;
+        p) PORT=$OPTARG
+        ;;
+    esac
+done
+
+if [ $COMMAND = "help" ]; then
+    :
+else
+    if $DEBUG ; then
+        echo "In debug mode, nothing will be commited to git repository"
+    fi
+
+    if [[ $USERNAME = "" || $DATABASE = "" ]]; then
+        echo "Options: -u POSTGRES_USERNAME and -d POSTGRES_DATABASE are required." >&2
+        exit 1
+    fi
+
+    if [ $OUTPUT_DIR="" ]; then
+        OUTPUT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    fi
+
+    TMP_DIR="${OUTPUT_DIR%%/}/tmp"
+
+    if [ $HOST="" ]; then
+        HOST="localhost"
+    fi
+
+    if [ $PORT="" ]; then
+        PORT="5432"
+    fi
+
+    if [ -f ~/.pgpass ]; then
+        :
+    else
+        echo "Create ~/.pgpass file with access to Postgres in format: hostname:port:database:username:password" >&2
+        exit 2
+    fi
+
+    PGPASS_CHMOD=$(ls -l ~/.pgpass | cut -d ' ' -f 1 | tr -d '\s\n' | tail -c 6)
+    if [ $PGPASS_CHMOD = "------" ]; then
+        :
+    else
+        echo "Change ~/.pgpass permissions to 0600 (chmod 0600 ~/.pgpass)."
+        exit 2
+    fi
+
+    if [ -d .git ]; then
+        :
+    else
+        echo "Create git repository (git init) with origin remote (git remote add origin <url>)." >&2
+        exit 3
+    fi
+
+    if [ -f .gitignore ]; then
+            :
+    else
+        echo "/tmp/" | cat > .gitignore
+        git add .gitignore
+        git commit -m "Create .gitignore file"
+    fi
+
+    GIT_ORIGIN=$(git remote -v | grep origin | wc -l | tr -d ' ')
+    if [ $GIT_ORIGIN -eq 0 ]; then
+        echo "Add origin remote to repository (git remote add origin <url>)." >&2
+        exit 4
+    fi
+fi
+
+case $COMMAND in
+    backup)
+        # Clear tmp directory if previous backup failed
+        if [ -d $TMP_DIR ]; then
+            rm -rf $TMP_DIR
+        fi
+
+        echo "Dump $DATABASE database for $USERNAME username to $OUTPUT_DIR directory."
+        pg_dump \
+            --format directory \
+            --compress 0 \
+            --file $TMP_DIR \
+            --host $HOST \
+            --port $PORT \
+            --username $USERNAME \
+            $DATABASE
+
+
+        if [ -d "$TMP_DIR" -a $(ls -l tmp | grep total | cut -d ' ' -f 2) -gt 0 ]; then
+            echo "Sort *.dat files"
+            for f in $TMP_DIR/* ; do
+                if [ $(basename $f) = "toc.dat" ]; then
+                    # Move binary toc.dat file without changes
+                    mv $f $OUTPUT_DIR
+                else
+                    $DEBUG && echo "Sort $(basename $f)"
+                    # Sort rows by id and strip them from empty lines and \.
+                    sort -gk 1 $f | egrep -v "^(\\\.)?$" > "${OUTPUT_DIR%%/}/$(basename $f)"
+                    # Append missing "\." line to sorted file
+                    echo "\." >> $(basename $f)
+                    # Remove tmp file after sorting
+                    rm $f
+                fi
+            done
+
+            # Remove tmp dir - it should be empty when sorting is done
+            rmdir $TMP_DIR
+            # Update db.list file
+            pg_restore --list $OUTPUT_DIR > "${OUTPUT_DIR%%/}/db.list"
+        else
+            echo "pg_dump failed. Abording" >&2
+            exit 5
+        fi
+
+        echo "Add files to git"
+        git add .
+        FILES_CHANGED=$(git status | grep "modified\|new file" | grep -v "toc.dat" | grep -v "db.list" | wc -l | tr -d ' ')
+        if [ $FILES_CHANGED -gt 0 ]; then
+            echo "New data detected, create and push commit"
+            git commit -am "Automatic backup"
+            git pull origin master
+
+            if [ $DEBUG = true ]; then
+                echo "Skip git push origin master"
+            else
+                git push origin master
+            fi
+        fi
+    ;;
+    restore)
+        echo "Restore $DATABASE database for $USERNAME username from $OUTPUT_DIR directory."
+        pg_restore \
+            --clean \
+            --use-list=db.list \
+            --username=$USERNAME \
+            --dbname=$DATABASE \
+            --schema=public \
+            --host=$HOST \
+            --port=$PORT \
+            $OUTPUT_DIR
+    ;;
+    help)
+        echo "Usage:"
+        echo "backup.sh -u POSTGRES_USERNAME -d POSTGRES_DATABASE [-h POSTGRES_HOST -p POSTGRES_PORT ] -o OUTPUT_DIRECTORY [-q -x]"
+        echo "restore.sh -u POSTGRES_USERNAME -d POSTGRES_DATABASE [-h POSTGRES_HOST -p POSTGRES_PORT ] -o OUTPUT_DIRECTORY [-q]"
+
+        echo "-o OUTPUT_DIRECTORY should have git repository with added git remote origin for branch master."
+        echo "-q Silence out output to stdout."
+        echo "-x Is for testing. Skips git push command at the end of script."
+    ;;
+    *)
+        echo "Unkown command. Try: postgit help"
+    ;;
+esac
