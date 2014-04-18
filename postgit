@@ -159,14 +159,13 @@ case $COMMAND in
     ;;
     help)
         echo "Usage:"
-        echo "backup.sh -u POSTGRES_USERNAME -d POSTGRES_DATABASE [-h POSTGRES_HOST -p POSTGRES_PORT ] -o OUTPUT_DIRECTORY [-q -x]"
-        echo "restore.sh -u POSTGRES_USERNAME -d POSTGRES_DATABASE [-h POSTGRES_HOST -p POSTGRES_PORT ] -o OUTPUT_DIRECTORY [-q]"
+        echo "postgit backup|restore -u POSTGRES_USERNAME -d POSTGRES_DATABASE [-h POSTGRES_HOST -p POSTGRES_PORT ] -o OUTPUT_DIRECTORY [-q -x]"
 
         echo "-o OUTPUT_DIRECTORY should have git repository with added git remote origin for branch master."
         echo "-q Silence out output to stdout."
         echo "-x Is for testing. Skips git push command at the end of script."
     ;;
     *)
-        echo "Unkown command. Try: postgit help"
+        echo "Unkown command. Check: postgit help"
     ;;
 esac
