@@ -23,7 +23,7 @@ while getopts "xqo:d:u:h:p:" opt; do
     esac
 done
 
-if [ $COMMAND = "help" ]; then
+if [ !"$COMMAND" -o $COMMAND = "help" ]; then
     :
 else
     if $DEBUG ; then
