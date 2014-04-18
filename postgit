@@ -97,12 +97,12 @@ case $COMMAND in
 
         echo "Dump $DATABASE database for $USERNAME username to $OUTPUT_DIR directory."
         pg_dump \
-            --format directory \
-            --compress 0 \
-            --file $TMP_DIR \
-            --host $HOST \
-            --port $PORT \
-            --username $USERNAME \
+            --format=directory \
+            --compress=0 \
+            --file=$TMP_DIR \
+            --host=$HOST \
+            --port=$PORT \
+            --username=$USERNAME \
             $DATABASE
 
 
