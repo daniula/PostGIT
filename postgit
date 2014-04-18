@@ -61,7 +61,7 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
     if [[ $PGPASS_CHMOD = "------" ]]; then
         :
     else
-        echo "Change ~/.pgpass permissions to 0600 \(chmod 0600 ~/.pgpass\)."
+        echo "Change ~/.pgpass permissions to 0600 (chmod 0600 ~/.pgpass)."
         exit 2
     fi
 
