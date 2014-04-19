@@ -4,11 +4,12 @@ COMMAND=$1
 shift 1
 
 DEBUG=false
+QUIET=''
 while getopts "xqo:d:u:h:p:" opt; do
     case $opt in
         x) DEBUG=true
         ;;
-        q) exec 1>/dev/null
+        q) QUIET='1>/dev/null'
         ;;
         o) OUTPUT_DIR=$OPTARG
         ;;
@@ -27,6 +28,10 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
 
     if $DEBUG ; then
         echo "In debug mode, nothing will be commited to git repository"
+    fi
+
+    if [[ $QUIET != '' ]]; then
+        exec 1>/dev/null
     fi
 
     if [[ -z $USERNAME || -z $DATABASE ]]; then
@@ -136,13 +141,13 @@ case $COMMAND in
         FILES_CHANGED=$(git status | grep "modified\|new file" | grep -v "toc.dat" | grep -v "db.list" | wc -l | tr -d ' ')
         if [[ $FILES_CHANGED -gt 0 ]]; then
             echo "New data detected, create and push commit"
-            git commit -am "Automatic backup"
-            git pull origin master
+            git commit -am "Automatic backup" $QUIET
+            git pull origin master $QUIET
 
             if [[ $DEBUG = true ]]; then
                 echo "Skip git push origin master"
             else
-                git push origin master
+                git push origin master $QUIET
             fi
         fi
     ;;
