@@ -1,25 +1,25 @@
 #!/bin/bash
 
-COMMAND=$1
+local COMMAND=$1
 shift 1
 
-DEBUG=false
-QUIET=''
+local DEBUG=false
+local QUIET=''
 while getopts "xqo:d:u:h:p:" opt; do
     case $opt in
-        x) DEBUG=true
+        x) local DEBUG=true
         ;;
-        q) QUIET='1>/dev/null'
+        q) local QUIET='&>/dev/null'
         ;;
-        o) OUTPUT_DIR=$OPTARG
+        o) local OUTPUT_DIR=$OPTARG
         ;;
-        u) USERNAME=$OPTARG
+        u) local USERNAME=$OPTARG
         ;;
-        d) DATABASE=$OPTARG
+        d) local DATABASE=$OPTARG
         ;;
-        h) HOST=$OPTARG
+        h) local HOST=$OPTARG
         ;;
-        p) PORT=$OPTARG
+        p) local PORT=$OPTARG
         ;;
     esac
 done
@@ -31,7 +31,7 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
     fi
 
     if [[ $QUIET != '' ]]; then
-        exec 1>/dev/null
+        exec &>/dev/null
     fi
 
     if [[ -z $USERNAME || -z $DATABASE ]]; then
@@ -40,19 +40,19 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
     fi
 
     if [[ -z $OUTPUT_DIR ]]; then
-        OUTPUT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+        local OUTPUT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     fi
 
     cd $OUTPUT_DIR
 
-    TMP_DIR="${OUTPUT_DIR%%/}/tmp"
+    local TMP_DIR="${OUTPUT_DIR%%/}/tmp"
 
     if [[ -z $HOST ]]; then
-        HOST="localhost"
+        local HOST="localhost"
     fi
 
     if [[ -z $PORT ]]; then
-        PORT="5432"
+       local PORT="5432"
     fi
 
     if [[ -f ~/.pgpass ]]; then
@@ -62,7 +62,7 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
         exit 2
     fi
 
-    PGPASS_CHMOD=$(ls -l ~/.pgpass | cut -d ' ' -f 1 | tr -d '\s\n' | tail -c 6)
+    local PGPASS_CHMOD=$(ls -l ~/.pgpass | cut -d ' ' -f 1 | tr -d '\s\n' | tail -c 6)
     if [[ $PGPASS_CHMOD = "------" ]]; then
         :
     else
@@ -141,7 +141,8 @@ case $COMMAND in
         FILES_CHANGED=$(git status | grep "modified\|new file" | grep -v "toc.dat" | grep -v "db.list" | wc -l | tr -d ' ')
         if [[ $FILES_CHANGED -gt 0 ]]; then
             echo "New data detected, create and push commit"
-            git commit -am "Automatic backup" $QUIET
+
+            git commit --all --message="Automatic backup" $QUIET
             git pull origin master $QUIET
 
             if [[ $DEBUG = true ]]; then
