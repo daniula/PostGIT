@@ -1,25 +1,25 @@
 #!/bin/bash
 
-local COMMAND=$1
+COMMAND=$1
 shift 1
 
-local DEBUG=false
-local QUIET=''
+DEBUG=false
+QUIET=''
 while getopts "xqo:d:u:h:p:" opt; do
     case $opt in
-        x) local DEBUG=true
+        x) DEBUG=true
         ;;
-        q) local QUIET='&>/dev/null'
+        q) QUIET='&>/dev/null'
         ;;
-        o) local OUTPUT_DIR=$OPTARG
+        o) OUTPUT_DIR=$OPTARG
         ;;
-        u) local USERNAME=$OPTARG
+        u) USERNAME=$OPTARG
         ;;
-        d) local DATABASE=$OPTARG
+        d) DATABASE=$OPTARG
         ;;
-        h) local HOST=$OPTARG
+        h) HOST=$OPTARG
         ;;
-        p) local PORT=$OPTARG
+        p) PORT=$OPTARG
         ;;
     esac
 done
@@ -40,19 +40,19 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
     fi
 
     if [[ -z $OUTPUT_DIR ]]; then
-        local OUTPUT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+        OUTPUT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     fi
 
     cd $OUTPUT_DIR
 
-    local TMP_DIR="${OUTPUT_DIR%%/}/tmp"
+    TMP_DIR="${OUTPUT_DIR%%/}/tmp"
 
     if [[ -z $HOST ]]; then
-        local HOST="localhost"
+        HOST="localhost"
     fi
 
     if [[ -z $PORT ]]; then
-       local PORT="5432"
+       PORT="5432"
     fi
 
     if [[ -f ~/.pgpass ]]; then
@@ -62,7 +62,7 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
         exit 2
     fi
 
-    local PGPASS_CHMOD=$(ls -l ~/.pgpass | cut -d ' ' -f 1 | tr -d '\s\n' | tail -c 6)
+    PGPASS_CHMOD=$(ls -l ~/.pgpass | cut -d ' ' -f 1 | tr -d '\s\n' | tail -c 6)
     if [[ $PGPASS_CHMOD = "------" ]]; then
         :
     else
