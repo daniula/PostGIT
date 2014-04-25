@@ -154,6 +154,7 @@ case $COMMAND in
     ;;
     restore)
         echo "Restore $DATABASE database for $USERNAME username from $OUTPUT_DIR directory."
+        git pull origin master $QUIET
         pg_restore \
             --clean \
             --use-list=db.list \
