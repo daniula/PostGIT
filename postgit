@@ -3,13 +3,16 @@
 COMMAND=$1
 shift 1
 
+STDOUT_LOG="/dev/null"
+STDERR_LOG="/dev/null"
+
 DEBUG=false
-QUIET=''
+QUIET=false
 while getopts "xqo:d:u:h:p:" opt; do
     case $opt in
         x) DEBUG=true
         ;;
-        q) QUIET='&>/dev/null'
+        q) QUIET=true
         ;;
         o) OUTPUT_DIR=$OPTARG
         ;;
@@ -30,8 +33,9 @@ if [[ -n $COMMAND && $COMMAND != "help" ]]; then
         echo "In debug mode, nothing will be commited to git repository"
     fi
 
-    if [[ $QUIET != '' ]]; then
-        exec &>/dev/null
+    if $QUIET; then
+        exec 1>$STDOUT_LOG
+        exec 2>$STDERR_LOG
     fi
 
     if [[ -z $USERNAME || -z $DATABASE ]]; then
@@ -142,19 +146,32 @@ case $COMMAND in
         if [[ $FILES_CHANGED -gt 0 ]]; then
             echo "New data detected, create and push commit"
 
-            git commit --all --message="Automatic backup" $QUIET
-            git pull origin master $QUIET
+            if $QUIET; then
+                git commit --all --message="Automatic backup" 1>STDOUT_LOG 2>STDERR_LOG
+                git pull origin master 1>STDOUT_LOG 2>STDERR_LOG
+            else:
+                git commit --all --message="Automatic backup"
+                git pull origin master
+            fi
 
             if [[ $DEBUG = true ]]; then
                 echo "Skip git push origin master"
             else
-                git push origin master $QUIET
+                if $QUIET; then
+                    git push origin master 1>STDOUT_LOG 2>STDERR_LOG
+                else:
+                    git push origin master
+                fi
             fi
         fi
     ;;
     restore)
         echo "Restore $DATABASE database for $USERNAME username from $OUTPUT_DIR directory."
-        git pull origin master $QUIET
+        if $QUIET; then
+            git pull origin master 1>STDOUT_LOG 2>STDERR_LOG
+        else:
+            git pull origin master
+        fi
         pg_restore \
             --clean \
             --use-list=db.list \
