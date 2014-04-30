@@ -149,7 +149,7 @@ case $COMMAND in
             if $QUIET; then
                 git commit --all --message="Automatic backup" 1>$STDOUT_LOG 2>$STDERR_LOG
                 git pull origin master 1>$STDOUT_LOG 2>$STDERR_LOG
-            else:
+            else
                 git commit --all --message="Automatic backup"
                 git pull origin master
             fi
@@ -159,7 +159,7 @@ case $COMMAND in
             else
                 if $QUIET; then
                     git push origin master 1>$STDOUT_LOG 2>$STDERR_LOG
-                else:
+                else
                     git push origin master
                 fi
             fi
