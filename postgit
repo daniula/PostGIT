@@ -147,8 +147,8 @@ case $COMMAND in
             echo "New data detected, create and push commit"
 
             if $QUIET; then
-                git commit --all --message="Automatic backup" 1>STDOUT_LOG 2>STDERR_LOG
-                git pull origin master 1>STDOUT_LOG 2>STDERR_LOG
+                git commit --all --message="Automatic backup" 1>$STDOUT_LOG 2>$STDERR_LOG
+                git pull origin master 1>$STDOUT_LOG 2>$STDERR_LOG
             else:
                 git commit --all --message="Automatic backup"
                 git pull origin master
@@ -158,7 +158,7 @@ case $COMMAND in
                 echo "Skip git push origin master"
             else
                 if $QUIET; then
-                    git push origin master 1>STDOUT_LOG 2>STDERR_LOG
+                    git push origin master 1>$STDOUT_LOG 2>$STDERR_LOG
                 else:
                     git push origin master
                 fi
@@ -168,7 +168,7 @@ case $COMMAND in
     restore)
         echo "Restore $DATABASE database for $USERNAME username from $OUTPUT_DIR directory."
         if $QUIET; then
-            git pull origin master 1>STDOUT_LOG 2>STDERR_LOG
+            git pull origin master 1>$STDOUT_LOG 2>$STDERR_LOG
         else:
             git pull origin master
         fi
