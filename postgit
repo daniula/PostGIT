@@ -169,7 +169,7 @@ case $COMMAND in
         echo "Restore $DATABASE database for $USERNAME username from $OUTPUT_DIR directory."
         if $QUIET; then
             git pull origin master 1>$STDOUT_LOG 2>$STDERR_LOG
-        else:
+        else
             git pull origin master
         fi
         pg_restore \
