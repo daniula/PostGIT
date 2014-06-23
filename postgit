@@ -172,8 +172,31 @@ case $COMMAND in
         else
             git pull origin master
         fi
+
+        SCHEMA_OWNER=`psql \
+            --no-align \
+            --tuples-only \
+            --username=$USERNAME \
+            --host=$HOST \
+            --port=$PORT \
+            --command "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = 'public'" \
+            $DATABASE`
+
+        psql \
+            --username=$USERNAME \
+            --host=$HOST \
+            --port=$PORT \
+            --command="DROP SCHEMA public CASCADE" \
+            $DATABASE
+
+        psql \
+            --username=$USERNAME \
+            --host=$HOST \
+            --port=$PORT \
+            --command="CREATE SCHEMA public AUTHORIZATION $SCHEMA_OWNER" \
+            $DATABASE
+
         pg_restore \
-            --clean \
             --use-list=db.list \
             --username=$USERNAME \
             --dbname=$DATABASE \
