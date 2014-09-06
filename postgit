@@ -27,7 +27,7 @@ while getopts "xqo:d:u:h:p:" opt; do
     esac
 done
 
-if [[ -n $COMMAND && $COMMAND != "help" ]]; then
+if [[ -n $COMMAND && $COMMAND != "help" && $COMMAND != "clear" ]]; then
 
     if $DEBUG ; then
         echo "In debug mode, nothing will be commited to git repository"
@@ -165,13 +165,8 @@ case $COMMAND in
             fi
         fi
     ;;
-    restore)
-        echo "Restore $DATABASE database for $USERNAME username from $OUTPUT_DIR directory."
-        if $QUIET; then
-            git pull origin master 1>$STDOUT_LOG 2>$STDERR_LOG
-        else
-            git pull origin master
-        fi
+    clear)
+        echo "Clear $DATABASE database for $USERNAME"
 
         SCHEMA_OWNER=`psql \
             --no-align \
@@ -195,6 +190,14 @@ case $COMMAND in
             --port=$PORT \
             --command="CREATE SCHEMA public AUTHORIZATION $SCHEMA_OWNER" \
             $DATABASE
+    ;;
+    restore)
+        echo "Restore $DATABASE database for $USERNAME username from $OUTPUT_DIR directory."
+        if $QUIET; then
+            git pull origin master 1>$STDOUT_LOG 2>$STDERR_LOG
+        else
+            git pull origin master
+        fi
 
         pg_restore \
             --use-list=db.list \
